@@ -11,6 +11,7 @@ import androidx.navigation.compose.*
 fun MainScreen() {
     val navController = rememberNavController()
     val foodList = remember { mutableStateListOf<FoodItem>() }
+    val shoppingItems = remember { mutableStateListOf<Pair<String, Boolean>>() }
 
     Scaffold(
         bottomBar = {
@@ -39,7 +40,13 @@ fun MainScreen() {
                 )
             }
             composable("scan") { ScanScreen() }
-            composable("shopping") { ShoppingScreen() }
+            composable("shopping") {
+                ShoppingScreen(
+                    items = shoppingItems,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
             composable("profile") { ProfileScreen() }
 
             // Schermata di aggiunta alimento
