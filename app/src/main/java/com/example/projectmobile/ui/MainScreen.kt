@@ -12,27 +12,42 @@ fun MainScreen() {
     val navController = rememberNavController()
     val foodList = remember { mutableStateListOf<FoodItem>() }
     val shoppingItems = remember { mutableStateListOf<Pair<String, Boolean>>() }
+    //val showBottomBar = currentDestination != "login"
 
     Scaffold(
         bottomBar = {
-            val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route
-            BottomNavigationBar(
-                selectedScreen = currentDestination ?: "fridge",
-                onTabSelected = { route ->
-                    navController.navigate(route) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry?.destination?.route
+            val showBottomBar = currentRoute !in listOf("splash", "login", "register")
+
+            if (showBottomBar) {
+                BottomNavigationBar(
+                    selectedScreen = currentRoute ?: "fridge",
+                    onTabSelected = { route ->
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = "fridge",
+            startDestination = "splash",
             modifier = Modifier.padding(paddingValues)
         ) {
+            composable("splash") {
+                SplashScreen(navController)
+            }
+            composable("login") {
+                LoginScreen(navController)
+            }
+            composable("register") {
+                RegisterScreen(navController)
+            }
             composable("fridge") {
                 FridgeScreen(
                     foodList = foodList,
@@ -47,7 +62,7 @@ fun MainScreen() {
                 )
             }
 
-            composable("profile") { ProfileScreen() }
+            composable("profile") { ProfileScreen(navController) }
 
             // Schermata di aggiunta alimento
             composable("add_item") {

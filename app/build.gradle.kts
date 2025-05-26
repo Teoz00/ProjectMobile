@@ -1,7 +1,10 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.plugin.compose)
     //alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
+
 }
 
 android {
@@ -68,6 +71,7 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.3.0")
     implementation("androidx.camera:camera-view:1.3.0")
     implementation ("com.google.mlkit:text-recognition:16.0.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -75,5 +79,20 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    // Importa Firebase BoM (Bill of Materials)
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation("com.google.guava:guava:32.1.2-android")
+    // Dipendenza per Firebase Authentication
+    implementation("com.google.firebase:firebase-auth-ktx")
+    // Firebase Firestore
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    // Se vuoi anche Google Sign-In (opzionale)
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation("org.json:json:20210307")
 
 }
+
+apply(plugin = "com.google.gms.google-services")
