@@ -22,6 +22,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import android.util.Base64
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -36,6 +40,7 @@ fun ProfileScreen(navController: NavController) {
     var birthDate by remember { mutableStateOf("") }
     var email by remember { mutableStateOf(user?.email ?: "") }
     var profileImageUrl by remember { mutableStateOf<String?>(null) }
+    var profileImageBase64 by remember { mutableStateOf<String?>(null) }
 
     var loading by remember { mutableStateOf(true) }
 
@@ -72,6 +77,7 @@ fun ProfileScreen(navController: NavController) {
                 username = doc.getString("username") ?: ""
                 birthDate = doc.getString("birthDate") ?: ""
                 profileImageUrl = doc.getString("profileImageUrl")
+                profileImageBase64 = doc.getString("profileImageBase64")
                 loading = false
             }
             .addOnFailureListener {
@@ -79,6 +85,7 @@ fun ProfileScreen(navController: NavController) {
                 loading = false
             }
     }
+
 
     if (loading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -170,21 +177,36 @@ fun ProfileScreen(navController: NavController) {
                     .clickable { launcherImagePicker.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                if (profileImageUrl != null && profileImageUrl!!.isNotEmpty()) {
-                    Image(
-                        painter = rememberAsyncImagePainter(profileImageUrl),
-                        contentDescription = "Profile Picture",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(70))
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "User Icon",
-                        tint = Color.White,
-                        modifier = Modifier.size(100.dp)
-                    )
+                when {
+                    profileImageUrl != null && profileImageUrl!!.isNotEmpty() -> {
+                        Image(
+                            painter = rememberAsyncImagePainter(profileImageUrl),
+                            contentDescription = "Profile Picture",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(70))
+                        )
+                    }
+                    profileImageBase64 != null && profileImageBase64!!.isNotEmpty() -> {
+                        val bitmap = base64ToBitmap(profileImageBase64!!)
+                        if (bitmap != null) {
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(70))
+                            )
+                        }
+                    }
+                    else -> {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "User Icon",
+                            tint = Color.White,
+                            modifier = Modifier.size(100.dp)
+                        )
+                    }
                 }
             }
 
@@ -415,3 +437,15 @@ fun ProfileScreen(navController: NavController) {
         }
     }
 }
+
+fun base64ToBitmap(base64Str: String): Bitmap? {
+    return try {
+        val decodedBytes = Base64.decode(base64Str, Base64.DEFAULT)
+        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+
+

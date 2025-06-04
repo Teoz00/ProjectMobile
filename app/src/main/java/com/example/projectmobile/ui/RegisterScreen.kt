@@ -36,6 +36,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import java.util.*
+import android.graphics.*
+import android.util.Base64
+import java.io.ByteArrayOutputStream
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.google.firebase.auth.GoogleAuthProvider
 
 @Composable
@@ -63,6 +70,29 @@ fun RegisterScreen(navController: NavController) {
     val launcherImagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? -> imageUriState.value = uri }
+
+    var profileImageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var profileImageBase64 by remember { mutableStateOf("") }
+    var assignedColor by remember { mutableStateOf<Color?>(null) }
+
+    // Aggiorna immagine profilo quando cambia username
+    LaunchedEffect(username) {
+        if (username.isNotBlank()) {
+            // Se è la prima lettera e non c'è ancora assignedColor -> assegnalo
+            if (assignedColor == null) {
+                assignedColor = generateRandomColor()
+            }
+            val color = assignedColor ?: generateRandomColor()
+            val initial = username[0]
+            val bitmap = generateProfileImage(initial, color)
+            profileImageBitmap = bitmap
+            profileImageBase64 = bitmapToBase64(bitmap)
+        } else {
+            profileImageBitmap = null
+            profileImageBase64 = ""
+            assignedColor = null // resetta colore se username viene svuotato
+        }
+    }
 
     // Google Sign-In launcher
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -105,21 +135,27 @@ fun RegisterScreen(navController: NavController) {
                 .clickable { launcherImagePicker.launch("image/*") },
             contentAlignment = Alignment.Center
         ) {
-            if (imageUriState.value != null) {
-                Image(
-                    painter = rememberAsyncImagePainter(imageUriState.value),
-                    contentDescription = "Profile Picture",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(70))
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "User Icon",
-                    tint = Color.White,
-                    modifier = Modifier.size(100.dp)
-                )
+            when {
+                imageUriState.value != null -> {
+                    // Se vuoi disabilitare caricamento immagine utente, puoi rimuovere questo blocco
+                }
+                profileImageBitmap != null -> {
+                    Image(
+                        bitmap = profileImageBitmap!!.asImageBitmap(),
+                        contentDescription = "Generated Profile Picture",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(70))
+                    )
+                }
+                else -> {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "User Icon",
+                        tint = Color.White,
+                        modifier = Modifier.size(100.dp)
+                    )
+                }
             }
         }
 
@@ -272,7 +308,7 @@ fun RegisterScreen(navController: NavController) {
                                 "email" to email,
                                 "username" to username,
                                 "birthDate" to birthDate,
-                                "profileImageUrl" to imageUrl
+                                "profileImageBase64" to profileImageBase64
                             )
 
                             db.collection("users").document(userId)
@@ -291,7 +327,11 @@ fun RegisterScreen(navController: NavController) {
                                 }
                         }
 
-                        // Se immagine selezionata, la carichiamo prima
+                        val profileImageToSave = if (profileImageBase64.isNotEmpty()) profileImageBase64 else ""
+
+                        saveUserToFirestore(profileImageToSave)
+
+                        /* Se immagine selezionata, la carichiamo prima
                         if (imageUri != null) {
                             val imageRef = storage.child("profile_images/$userId.jpg")
                             imageRef.putFile(imageUri)
@@ -312,7 +352,7 @@ fun RegisterScreen(navController: NavController) {
                         } else {
                             // Nessuna immagine: salviamo senza URL immagine
                             saveUserToFirestore("")
-                        }
+                        }*/
                     }
                     .addOnFailureListener {
                         loading = false
@@ -451,3 +491,44 @@ private fun saveUser(
         }
 }
 */
+fun generateRandomColor(): Color {
+    val r = (0..255).random()
+    val g = (0..255).random()
+    val b = (0..255).random()
+    return Color(r, g, b)
+}
+
+fun generateProfileImage(initial: Char, backgroundColor: Color, size: Int = 140): Bitmap {
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val paint = Paint()
+
+    // Sfondo
+    paint.color = android.graphics.Color.argb(255,
+        (backgroundColor.red * 255).toInt(),
+        (backgroundColor.green * 255).toInt(),
+        (backgroundColor.blue * 255).toInt())
+    canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), paint)
+
+    // Testo
+    paint.color = android.graphics.Color.WHITE
+    paint.textSize = size * 0.6f
+    paint.textAlign = Paint.Align.CENTER
+    paint.typeface = Typeface.DEFAULT_BOLD
+    paint.isAntiAlias = true
+
+    val xPos = size / 2f
+    val yPos = size / 2f - (paint.descent() + paint.ascent()) / 2
+
+    canvas.drawText(initial.toString().uppercase(), xPos, yPos, paint)
+
+    return bitmap
+}
+
+fun bitmapToBase64(bitmap: Bitmap): String {
+    val outputStream = ByteArrayOutputStream()
+    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+    val byteArray = outputStream.toByteArray()
+    return Base64.encodeToString(byteArray, Base64.DEFAULT)
+}
+
