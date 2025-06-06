@@ -28,15 +28,51 @@ import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.rememberDismissState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.filled.Delete
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.concurrent.TimeUnit
+
+
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun FridgeScreen(
     foodList: MutableList<FoodItem>,
     onAddButtonClicked: () -> Unit,
-    onFoodItemClicked: (FoodItem) -> Unit
+    onFoodItemClicked: (FoodItem) -> Unit,
 ) {
     var searchQuery by remember { mutableStateOf("") }
+
+    var mediaScadenza by remember { mutableStateOf<Double?>(null) }
+    LaunchedEffect(foodList.toList()) {
+        calcolaMediaScadenze(foodList) { media ->
+            mediaScadenza = media
+        }
+    }
+
+    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val oggi = Calendar.getInstance().time
+
+    val prodottiInScadenza by remember(foodList) {
+        derivedStateOf {
+            foodList.filter {
+                try {
+                    val scadenza = formatter.parse(it.expirationDate)
+                    val diffMillis = scadenza.time - oggi.time
+                    val giorniRimanenti = TimeUnit.MILLISECONDS.toDays(diffMillis)
+                    giorniRimanenti in 0..3
+                } catch (e: Exception) {
+                    false
+                }
+            }
+        }
+    }
+
+
 
     Scaffold(
         floatingActionButton = {
@@ -84,6 +120,64 @@ fun FridgeScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = " 📊 Calculate average days remaining:",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF3E6D8E)
+                )
+
+                if (mediaScadenza != null) {
+                    Text(
+                        text = " ${"%.1f".format(mediaScadenza)}",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF3E6D8E)
+                    )
+                }
+            }
+
+            if (prodottiInScadenza.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "⚠️ Products expiring soon:",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF856404),
+                            fontSize = 18.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        val oggi = Calendar.getInstance().time
+
+                        prodottiInScadenza.forEach { prodotto ->
+                            val scadenzaDate = formatter.parse(prodotto.expirationDate)
+                            val diffMillis = scadenzaDate.time - oggi.time
+                            val diffDays = TimeUnit.MILLISECONDS.toDays(diffMillis)
+
+                            Text(
+                                "- ${prodotto.name} ($diffDays days left)",
+                                color = Color(0xFF856404)
+                            )
+                        }
+                    }
+                }
+            }
+
 
             // Lista degli ingredienti filtrati
             LazyColumn(
