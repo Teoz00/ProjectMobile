@@ -5,7 +5,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.*
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 @Composable
 fun MainScreen() {
@@ -51,7 +57,10 @@ fun MainScreen() {
             composable("fridge") {
                 FridgeScreen(
                     foodList = foodList,
-                    onAddButtonClicked = { navController.navigate("add_item") }
+                    onAddButtonClicked = { navController.navigate("add_item") },
+                    onFoodItemClicked = { foodItem ->
+                        navController.navigate("food_detail/${foodItem.name}")
+                    }
                 )
             }
             composable("scan") { ScanScreen() }
@@ -74,6 +83,44 @@ fun MainScreen() {
                     onBack = { navController.popBackStack() }
                 )
             }
+
+            composable(
+                route = "food_detail/{itemName}",
+                arguments = listOf(navArgument("itemName") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val itemName = backStackEntry.arguments?.getString("itemName") ?: ""
+                val foodItem = foodList.find { it.name == itemName }
+                if (foodItem != null) {
+                    FoodDetailScreen(
+                        foodItem = foodItem,
+                        navController = navController,
+                        onSave = { updatedItem ->
+                            val index = foodList.indexOfFirst { it.name == foodItem.name }
+                            if (index != -1) {
+                                foodList[index] = updatedItem
+                            }
+                        }
+                    )
+                } else {
+                    Text(
+                        text = "Item not found",
+                        modifier = Modifier.fillMaxSize(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Red
+                    )
+                }
+            }
+
+            composable("recipes/{foodName}") { backStackEntry ->
+                val foodName = backStackEntry.arguments?.getString("foodName") ?: ""
+                RecipeListScreen(foodName = foodName, navController = navController)
+            }
+
+            composable("recipeDetail/{recipeId}") { backStackEntry ->
+                val recipeId = backStackEntry.arguments?.getString("recipeId")?.toIntOrNull() ?: 0
+                RecipeDetailScreen(recipeId, navController = navController)
+            }
+
         }
     }
 }

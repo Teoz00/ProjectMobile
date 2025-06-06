@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -66,7 +67,7 @@ fun AddItemScreen(
             Box(
                 modifier = Modifier
                     .size(150.dp)
-                    .clip(MaterialTheme.shapes.medium)
+                    .clip(CircleShape)
                     .background(Color(0xFF3E6D8E))
                     .align(Alignment.CenterHorizontally),
 

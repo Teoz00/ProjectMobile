@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
 import coil.compose.rememberAsyncImagePainter
 import androidx.compose.material.DismissDirection
 import androidx.compose.material.DismissValue
@@ -32,7 +33,8 @@ import androidx.compose.material.icons.filled.Delete
 @Composable
 fun FridgeScreen(
     foodList: MutableList<FoodItem>,
-    onAddButtonClicked: () -> Unit
+    onAddButtonClicked: () -> Unit,
+    onFoodItemClicked: (FoodItem) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -50,7 +52,7 @@ fun FridgeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFE6F1F6)) // Sfondo principale della pagina
+                .background(Color(0xFFE6F1F6))
         ) {
             // Parte blu in cima (navbar)
             Box(
@@ -126,11 +128,12 @@ fun FridgeScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp)
-                                    .clip(MaterialTheme.shapes.medium),
+                                    .clip(MaterialTheme.shapes.medium)
+                                    .clickable { onFoodItemClicked(item) },
                                 shape = MaterialTheme.shapes.medium,
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                            ) {
+                            ){
                                 Row(
                                     modifier = Modifier.padding(13.dp),
                                     verticalAlignment = Alignment.CenterVertically
