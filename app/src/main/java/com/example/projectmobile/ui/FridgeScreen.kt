@@ -1,5 +1,6 @@
 package com.example.projectmobile.ui
 
+import android.content.Context
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,33 +9,32 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
+import coil.compose.rememberAsyncImagePainter
 import androidx.compose.material.DismissDirection
 import androidx.compose.material.DismissValue
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.SwipeToDismiss
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.rememberDismissState
-import coil.compose.rememberAsyncImagePainter
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.icons.filled.Delete
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun FridgeScreen(
-    foodList: List<FoodItem>,
+    foodList: MutableList<FoodItem>,
     onAddButtonClicked: () -> Unit,
-    onFoodItemClicked: (FoodItem) -> Unit,
-    onDeleteItem: (FoodItem) -> Unit
+    onFoodItemClicked: (FoodItem) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -54,7 +54,7 @@ fun FridgeScreen(
                 .fillMaxSize()
                 .background(Color(0xFFE6F1F6))
         ) {
-            // Barra blu in alto
+            // Parte blu in cima (navbar)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -85,22 +85,19 @@ fun FridgeScreen(
                     .padding(horizontal = 16.dp)
             )
 
-            // Lista degli alimenti filtrati
+            // Lista degli ingredienti filtrati
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    .padding(paddingValues) // Applica i paddingValues solo alla lista, non alla parte blu
             ) {
-                items(
-                    items = foodList.filter {
-                        it.name.contains(searchQuery, ignoreCase = true)
-                    },
-                    key = { it.name } // assume name univoco
-                ) { item ->
+                items(foodList.filter {
+                    it.name.contains(searchQuery, ignoreCase = true)
+                }) { item ->
                     val dismissState = rememberDismissState(
-                        confirmStateChange = { dismissValue ->
-                            if (dismissValue == DismissValue.DismissedToStart) {
-                                onDeleteItem(item)
+                        confirmStateChange = {
+                            if (it == DismissValue.DismissedToStart) {
+                                foodList.remove(item)
                             }
                             true
                         }
@@ -136,14 +133,14 @@ fun FridgeScreen(
                                 shape = MaterialTheme.shapes.medium,
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                            ) {
+                            ){
                                 Row(
                                     modifier = Modifier.padding(13.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    item.imageUri?.let { uri ->
+                                    item.imageUri?.let {
                                         Image(
-                                            painter = rememberAsyncImagePainter(uri),
+                                            painter = rememberAsyncImagePainter(it),
                                             contentDescription = item.name,
                                             modifier = Modifier
                                                 .size(48.dp)
@@ -174,9 +171,11 @@ fun FridgeScreen(
                         }
                     )
 
+                    // Aggiungi uno spacer tra le card
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
     }
 }
+
