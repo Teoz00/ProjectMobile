@@ -189,7 +189,7 @@ fun FoodDetailScreen(
                     Text("Save", color = Color.White)
                 }
 
-                Spacer(modifier = Modifier.height(160.dp))
+                Spacer(modifier = Modifier.height(80.dp))
 
                 // Sezione ATTENTION
                 Box(
