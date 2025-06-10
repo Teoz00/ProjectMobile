@@ -54,6 +54,9 @@ import coil.compose.rememberAsyncImagePainter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.compose.animation.core.*
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.ui.draw.rotate
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -186,10 +189,15 @@ fun FridgeScreen(
                             val diffMillis = scadenzaDate.time - oggi.time
                             val diffDays = TimeUnit.MILLISECONDS.toDays(diffMillis)
 
-                            Text(
-                                "- ${prodotto.name} ($diffDays days left)",
-                                color = Color(0xFF856404)
-                            )
+                            // la clessidra animata
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "- ${prodotto.name} ($diffDays days left)",
+                                    color = Color(0xFF856404)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                RotatingHourglass(modifier = Modifier.size(20.dp)) // <<--- CLessidra animata qui
+                            }
                         }
                     }
                 }
@@ -287,5 +295,21 @@ fun FridgeScreen(
             }
         }
     }
+}
+@Composable
+fun RotatingHourglass(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition()
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2000, easing = LinearEasing)
+        )
+    )
+    Icon(
+        imageVector = Icons.Filled.HourglassEmpty,
+        contentDescription = "Hourglass",
+        modifier = modifier.rotate(rotation)
+    )
 }
 
